@@ -1,0 +1,10 @@
+node_modules
+static
+__pycache__
+*.sqlite*
+.env*
+.git
+evidence
+test-results
+*.zip
+source_bundle.py

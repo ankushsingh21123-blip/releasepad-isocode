@@ -40,3 +40,7 @@ npx playwright test
 ## Limits
 
 Anonymous demo tokens are stored in browser localStorage; anyone possessing a token can use that workspace. No real authentication, production audit signing, code scanning, CI connection or release automation is claimed. Snapshot digests detect changed serialized data, not who created it. Workspace cleanup runs on new workspace creation. Database backups and production concurrency testing are not implemented.
+
+## Container preparation
+
+`Dockerfile` and `HOSTING_CHECKLIST.md` describe a single-instance persistent-volume deployment shape. The single-process `run_server.py` entry point validates and respects `PORT`; its local stop/start persistence test passes. Container build/runtime has not been tested here and no hosting provider has been selected. Never describe an ephemeral `/tmp` file as durable.
