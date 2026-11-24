@@ -1,0 +1,1 @@
+import{defineConfig}from'@playwright/test';export default defineConfig({testDir:'.',testMatch:'browser.spec.ts',workers:1,use:{baseURL:'http://127.0.0.1:4182',headless:true},webServer:{command:process.env.RELEASEPAD_TEST_SERVER||'python -m uvicorn api.main:app --port 4182',url:'http://127.0.0.1:4182/api/health',reuseExistingServer:true}})
