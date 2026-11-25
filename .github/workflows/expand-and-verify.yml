@@ -37,6 +37,10 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm audit --audit-level=low
+      - name: Build container and verify dedicated-volume restart
+        run: |
+          docker build -t releasepad-ci .
+          python test_container.py
       - name: Publish normal source tree after successful checks
         run: |
           git config user.name 'github-actions[bot]'
