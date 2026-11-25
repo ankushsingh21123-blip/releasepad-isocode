@@ -523,6 +523,63 @@ FILES = {'.dockerignore': 'node_modules\n'
                 ' def '
                 "test_body_limit(self):self.assertEqual(self.c.post('/api/candidates',headers=self.h,json={'title':'x'*34000}).status_code,413)\n"
                 "if __name__=='__main__':unittest.main()\n",
+ 'test_container.py': '"""CI-only actual Docker image and disposable dedicated-volume persistence check."""\n'
+                      'import subprocess, time, urllib.request, json, uuid\n'
+                      'suffix=uuid.uuid4().hex[:10]\n'
+                      "name='releasepad-test-'+suffix\n"
+                      "volume=name+'-data'\n"
+                      'port=4193\n'
+                      '\n'
+                      'def docker(*args):\n'
+                      "    return subprocess.check_output(['docker',*args],text=True).strip()\n"
+                      '\n'
+                      "def request(path,method='GET',body=None,token=None):\n"
+                      "    headers={'Content-Type':'application/json'}\n"
+                      "    if token: headers['X-Workspace']=token\n"
+                      '    with '
+                      "urllib.request.urlopen(urllib.request.Request('http://127.0.0.1:'+str(port)+path,data=None "
+                      'if body is None else '
+                      'json.dumps(body).encode(),method=method,headers=headers),timeout=5) as response:\n'
+                      '        return json.load(response)\n'
+                      '\n'
+                      'def start():\n'
+                      '    '
+                      "docker('run','-d','--name',name,'-p','127.0.0.1:'+str(port)+':'+str(port),'-e','PORT='+str(port),'-v',volume+':/data','releasepad-ci')\n"
+                      '    for _ in range(100):\n'
+                      '        try:\n'
+                      "            assert request('/api/health')['storage']=='sqlite'\n"
+                      '            return\n'
+                      '        except Exception: time.sleep(.2)\n'
+                      "    raise RuntimeError('Container did not become healthy')\n"
+                      '\n'
+                      'try:\n'
+                      "    docker('volume','create',volume)\n"
+                      '    start()\n'
+                      "    token=request('/api/workspaces','POST')['workspace']\n"
+                      "    candidate=request('/api/candidates','POST',{'title':'Container volume "
+                      "test'},token)['candidate']\n"
+                      "    for check in candidate['checks']:\n"
+                      '        '
+                      "candidate=request('/api/candidates/'+candidate['id']+'/checks/'+check['id'],'PATCH',{'version':candidate['version'],'status':'pass','reference':'Synthetic "
+                      "container CI test'},token)['candidate']\n"
+                      '    '
+                      "snapshot=request('/api/candidates/'+candidate['id']+'/snapshots','POST',{'version':candidate['version']},token)['snapshot']\n"
+                      "    with urllib.request.urlopen('http://127.0.0.1:'+str(port)+'/') as response:\n"
+                      "        assert b'<html' in response.read().lower()\n"
+                      "    docker('rm','-f',name)\n"
+                      '    start()\n'
+                      "    restored=request('/api/candidates/'+candidate['id'],token=token)['candidate']\n"
+                      '    '
+                      "saved=request('/api/candidates/'+candidate['id']+'/snapshots/'+snapshot['id'],token=token)['snapshot']\n"
+                      "    assert restored['ready'] and restored['title']==candidate['title']\n"
+                      "    assert saved['digest']==snapshot['digest'] and "
+                      "saved['payload']==snapshot['payload']\n"
+                      "    print('PASS actual container build, non-default PORT, frontend, API, SQLite and "
+                      'replacement-container dedicated-volume persistence. Not a hosting-provider '
+                      "deployment.')\n"
+                      'finally:\n'
+                      "    subprocess.run(['docker','rm','-f',name],check=False)\n"
+                      "    subprocess.run(['docker','volume','rm',volume],check=False)\n",
  'test_restart.py': '"""Local process-restart proof only, not hosted durability or container proof."""\n'
                     'import subprocess,tempfile,os,time,urllib.request,json,socket,sys\n'
                     'from pathlib import Path\n'
